@@ -5,7 +5,7 @@ import time
 # --- 1. INITIALIZE ---
 st.set_page_config(page_title="Pro Tetris", layout="centered")
 
-# Map of Shape: (Matrix, Color Emoji)
+# Official Tetris Color Map
 SHAPES = {
     'I': {'shape': [[1, 1, 1, 1]], 'color': '🟦'},
     'O': {'shape': [[1, 1], [1, 1]], 'color': '🟨'},
@@ -17,7 +17,6 @@ SHAPES = {
 }
 
 if 'board' not in st.session_state:
-    # Board stores the COLOR EMOJI string directly now
     st.session_state.board = [["⬛" for _ in range(10)] for _ in range(20)]
     st.session_state.score = 0
     st.session_state.curr_type = random.choice(list(SHAPES.keys()))
@@ -39,14 +38,11 @@ def check_collision(r, c, shape):
 def lock_and_clear():
     curr_r, curr_c = st.session_state.curr_pos
     shape_data = SHAPES[st.session_state.curr_type]
-
-    # Bake color into board
     for r, row in enumerate(shape_data['shape']):
         for c, val in enumerate(row):
             if val and curr_r + r < 20:
                 st.session_state.board[curr_r + r][curr_c + c] = shape_data['color']
 
-    # Clear Lines
     new_board = [row for row in st.session_state.board if "⬛" in row]
     cleared = 20 - len(new_board)
     if cleared > 0:
@@ -54,11 +50,9 @@ def lock_and_clear():
         for _ in range(cleared): new_board.insert(0, ["⬛" for _ in range(10)])
         st.session_state.board = new_board
 
-    # Cycle Pieces
     st.session_state.curr_type = st.session_state.next_type
     st.session_state.next_type = random.choice(list(SHAPES.keys()))
     st.session_state.curr_pos = [0, 3]
-
     if check_collision(0, 3, SHAPES[st.session_state.curr_type]['shape']):
         st.session_state.board = [["⬛" for _ in range(10)] for _ in range(20)]
         st.session_state.score = 0
@@ -80,41 +74,59 @@ def rotate():
         SHAPES[st.session_state.curr_type]['shape'] = rotated
 
 
-# --- 3. CSS ---
+# --- 3. CSS (MOBILE OPTIMIZED) ---
 st.markdown("""<style>
-    .block-container { max-width: 300px !important; padding: 0 !important; }
+    .block-container { max-width: 350px !important; padding: 10px !important; }
     .stApp { background-color: #2e2e2e !important; }
-    [data-testid="stText"] {
-        background-color: #1a1a1a; padding: 5px; border: 3px solid #444;
-        line-height: 1.0; font-size: 14px; width: 100% !important;
+
+    /* Screen styling */
+    pre {
+        background-color: #1a1a1a !important; padding: 5px !important; 
+        border: 2px solid #444 !important; color: white !important;
+        line-height: 1.1 !important; font-size: 13px !important;
     }
-    div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 2px !important; }
-    div.stButton > button { background-color: #3B3B3B !important; color: white !important; height: 60px !important; font-size: 20px !important; }
+
+    /* Controller Grid */
+    div[data-testid="stHorizontalBlock"] {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 2px !important;
+    }
+    div.stButton > button {
+        background-color: #3B3B3B !important; color: white !important;
+        height: 60px !important; font-size: 20px !important;
+    }
 </style>""", unsafe_allow_html=True)
 
-# --- 4. DISPLAY ---
-col_score, col_next = st.columns(2)
-col_score.metric("SCORE", st.session_state.score)
+# --- 4. DISPLAY LAYOUT ---
+st.title("🧱 PRO TETRIS")
 
-# NEXT PIECE PREVIEW
-next_shape = SHAPES[st.session_state.next_type]
-next_preview = ""
-for row in next_shape['shape']:
-    next_preview += "".join([next_shape['color'] if v else "⬛" for v in row]) + "\n"
-col_next.text(f"NEXT:\n{next_preview}")
+# Side-by-Side Layout
+game_col, side_col = st.columns([3, 1])
 
-# RENDER MAIN BOARD
-display_board = [row[:] for row in st.session_state.board]
-curr_r, curr_c = st.session_state.curr_pos
-curr_data = SHAPES[st.session_state.curr_type]
+with side_col:
+    st.write("#### NEXT")
+    n_shape = SHAPES[st.session_state.next_type]
+    n_preview = ""
+    for row in n_shape['shape']:
+        n_preview += "".join([n_shape['color'] if v else "⬛" for v in row]) + "\n"
+    st.text(n_preview)
+    st.divider()
+    st.metric("SCORE", st.session_state.score)
 
-for r, row in enumerate(curr_data['shape']):
-    for c, val in enumerate(row):
-        if val and curr_r + r < 20:
-            display_board[curr_r + r][curr_c + c] = curr_data['color']
+with game_col:
+    # RENDER BOARD
+    display_board = [row[:] for row in st.session_state.board]
+    curr_r, curr_c = st.session_state.curr_pos
+    curr_data = SHAPES[st.session_state.curr_type]
 
-board_str = "".join(["".join(row) + "\n" for row in display_board])
-st.text(board_str)
+    for r, row in enumerate(curr_data['shape']):
+        for c, val in enumerate(row):
+            if val and curr_r + r < 20:
+                display_board[curr_r + r][curr_c + c] = curr_data['color']
+
+    board_str = "".join(["".join(row) + "\n" for row in display_board])
+    st.text(board_str)
 
 # --- 5. CONTROLS ---
 c1, c2, c3, c4 = st.columns(4)
