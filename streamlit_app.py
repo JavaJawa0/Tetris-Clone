@@ -5,7 +5,6 @@ import time
 # --- 1. INITIALIZE ---
 st.set_page_config(page_title="Pro Tetris", layout="centered")
 
-# Official Tetris Color Map
 SHAPES = {
     'I': {'shape': [[1, 1, 1, 1]], 'color': '🟦'},
     'O': {'shape': [[1, 1], [1, 1]], 'color': '🟨'},
@@ -74,52 +73,51 @@ def rotate():
         SHAPES[st.session_state.curr_type]['shape'] = rotated
 
 
-# --- 3. CSS (MOBILE OPTIMIZED) ---
+# --- 3. THE "DASHBOARD" CSS ---
 st.markdown("""<style>
-    .block-container { max-width: 350px !important; padding: 10px !important; }
+    .block-container { max-width: 320px !important; padding: 5px !important; }
     .stApp { background-color: #2e2e2e !important; }
 
-    /* Screen styling */
-    pre {
-        background-color: #1a1a1a !important; padding: 5px !important; 
-        border: 2px solid #444 !important; color: white !important;
-        line-height: 1.1 !important; font-size: 13px !important;
+    /* Force Side-by-Side Dashboard */
+    [data-testid="column"] {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
     }
 
-    /* Controller Grid */
+    /* Screen formatting */
+    pre {
+        background-color: #1a1a1a !important; color: white !important;
+        padding: 4px !important; border: 2px solid #444 !important;
+        line-height: 1.0 !important; font-size: 12px !important;
+        margin: 0 !important;
+    }
+
+    /* Grid for Controller */
     div[data-testid="stHorizontalBlock"] {
-        display: grid !important;
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 2px !important;
+        display: flex !important; flex-direction: row !important;
+        flex-wrap: nowrap !important; gap: 4px !important;
     }
-    div.stButton > button {
-        background-color: #3B3B3B !important; color: white !important;
-        height: 60px !important; font-size: 20px !important;
-    }
+    div.stButton > button { height: 65px !important; font-size: 25px !important; }
 </style>""", unsafe_allow_html=True)
 
 # --- 4. DISPLAY LAYOUT ---
 st.title("🧱 PRO TETRIS")
 
-# Side-by-Side Layout
-game_col, side_col = st.columns([3, 1])
+# Dashboard Row
+game_col, side_col = st.columns([2, 1])
 
 with side_col:
-    st.write("#### NEXT")
+    st.write("**NEXT**")
     n_shape = SHAPES[st.session_state.next_type]
-    n_preview = ""
-    for row in n_shape['shape']:
-        n_preview += "".join([n_shape['color'] if v else "⬛" for v in row]) + "\n"
+    n_preview = "".join(["".join([n_shape['color'] if v else "⬛" for v in row]) + "\n" for row in n_shape['shape']])
     st.text(n_preview)
-    st.divider()
-    st.metric("SCORE", st.session_state.score)
+    st.write(f"**SC:**\n{st.session_state.score}")
 
 with game_col:
-    # RENDER BOARD
     display_board = [row[:] for row in st.session_state.board]
     curr_r, curr_c = st.session_state.curr_pos
     curr_data = SHAPES[st.session_state.curr_type]
-
     for r, row in enumerate(curr_data['shape']):
         for c, val in enumerate(row):
             if val and curr_r + r < 20:
