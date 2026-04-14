@@ -63,32 +63,39 @@ def rotate():
         st.session_state.curr_shape = rotated
 
 
-# --- 3. STYLE (FORCED TIGHT LAYOUT) ---
+# --- 3. STYLE (FORCED BIG HORIZONTAL BUTTONS) ---
 st.markdown("""<style>
     .stApp { background-color: #2e2e2e !important; }
+
+    /* The Game Screen */
     [data-testid="stText"] {
         background-color: #8A9878; color: #101010;
         font-family: monospace; padding: 10px; border: 5px solid #000;
         line-height: 1.0; font-size: 14px; font-weight: bold;
     }
 
-    /* REMOVE GAPS BETWEEN COLUMNS */
-    [data-testid="column"] {
-        width: 33% !important;
-        flex: 1 1 33% !important;
-        min-width: 33% !important;
-        padding: 0px 2px !important; /* Tiny gap */
-    }
-
-    /* MAKE BUTTONS SQUISH TOGETHER */
+    /* FORCE THE BUTTON ROW TO STAY HORIZONTAL */
     [data-testid="stHorizontalBlock"] {
-        gap: 0px !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
     }
 
+    [data-testid="column"] {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    /* BIG BUTTONS */
     div.stButton > button {
         background-color: #3B3B3B !important; color: white !important;
-        height: 55px; width: 100% !important; border-radius: 5px;
-        font-size: 22px; padding: 0px; margin: 0px;
+        height: 70px !important; 
+        font-size: 30px !important; 
+        border-radius: 10px !important;
+        width: 100% !important;
     }
 </style>""", unsafe_allow_html=True)
 
@@ -107,7 +114,7 @@ board_str = "".join(["".join(["🟥" if cell else "⬛" for cell in row]) + "\n"
 st.text(board_str)
 
 # --- 5. THE BUTTONS ---
-# Row 1: Left, Down, Right
+# Main Arrows Row
 c1, c2, c3 = st.columns(3)
 with c1:
     if st.button("⬅️"): move(0, -1); st.rerun()
@@ -116,9 +123,9 @@ with c2:
 with c3:
     if st.button("➡️"): move(0, 1); st.rerun()
 
-st.write("")  # Tiny spacer
+st.write("")  # Spacer
 
-# Row 2: Rotate and Reset (Wider buttons)
+# Rotate and Reset Row
 cr1, cr2 = st.columns([3, 1])
 with cr1:
     if st.button("🔄 ROTATE", use_container_width=True): rotate(); st.rerun()
