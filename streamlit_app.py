@@ -22,7 +22,6 @@ if 'board' not in st.session_state:
     st.session_state.next_type = random.choice(list(SHAPES.keys()))
     st.session_state.curr_pos = [0, 3]
 
-
 # --- 2. LOGIC ---
 def check_collision(r, c, shape):
     for ri, row in enumerate(shape):
@@ -32,7 +31,6 @@ def check_collision(r, c, shape):
                 if new_c < 0 or new_c >= 10 or new_r >= 20: return True
                 if new_r >= 0 and st.session_state.board[new_r][new_c] != "⬛": return True
     return False
-
 
 def lock_and_clear():
     curr_r, curr_c = st.session_state.curr_pos
@@ -54,15 +52,11 @@ def lock_and_clear():
         st.session_state.board = [["⬛" for _ in range(10)] for _ in range(20)]
         st.session_state.score = 0
 
-
 def move(dr, dc):
     shape = SHAPES[st.session_state.curr_type]['shape']
     nr, nc = st.session_state.curr_pos[0] + dr, st.session_state.curr_pos[1] + dc
-    if not check_collision(nr, nc, shape):
-        st.session_state.curr_pos = [nr, nc]
-    elif dr > 0:
-        lock_and_clear()
-
+    if not check_collision(nr, nc, shape): st.session_state.curr_pos = [nr, nc]
+    elif dr > 0: lock_and_clear()
 
 def rotate():
     shape = SHAPES[st.session_state.curr_type]['shape']
@@ -70,66 +64,55 @@ def rotate():
     if not check_collision(st.session_state.curr_pos[0], st.session_state.curr_pos[1], rotated):
         SHAPES[st.session_state.curr_type]['shape'] = rotated
 
-
-# --- 3. THE "BRICK" CSS (FORCE NO STACKING) ---
+# --- 3. CSS (ZERO-BREAK LAYOUT) ---
 st.markdown("""<style>
-    /* Force main container to be skinny */
-    .block-container { max-width: 320px !important; padding: 5px !important; margin: auto !important; }
+    .block-container { max-width: 320px !important; padding: 0 !important; margin: auto !important; }
     .stApp { background-color: #2e2e2e !important; }
 
-    /* Screen formatting */
-    pre {
-        background-color: #1a1a1a !important; color: white !important;
-        padding: 5px !important; border: 2px solid #444 !important;
-        line-height: 1.0 !important; font-size: 13px !important;
-        white-space: nowrap !important; letter-spacing: -3px !important;
-        font-family: monospace !important; overflow: hidden !important;
+    /* The Game Table */
+    .game-table { 
+        border-collapse: collapse; margin: 0 auto; line-height: 0; 
+        background-color: #1a1a1a; border: 4px solid #444; 
     }
+    .game-table td { padding: 0 !important; font-size: 20px !important; width: 22px; height: 22px; text-align: center; }
 
-    /* FORCE SIDE-BY-SIDE GRID FOR DASHBOARD */
-    div[data-testid="column"]:has(pre) {
-        display: flex !important; flex-direction: row !important;
-        gap: 5px !important; width: 100% !important;
-    }
+    /* Scoreboard */
+    .stats { color: white; font-family: monospace; text-align: center; margin-bottom: 5px; }
 
-    /* FORCE BUTTON ROW */
+    /* Force button row */
     div[data-testid="stHorizontalBlock"] {
         display: grid !important; 
         grid-template-columns: repeat(4, 1fr) !important; 
         gap: 2px !important;
     }
-
-    div[data-testid="column"] { width: 100% !important; flex: none !important; }
-
     div.stButton > button { height: 60px !important; font-size: 22px !important; padding: 0 !important; }
 </style>""", unsafe_allow_html=True)
 
 # --- 4. DISPLAY ---
-st.title("🧱 PRO TETRIS")
+st.markdown(f"<div class='stats'>SCORE: {st.session_state.score}</div>", unsafe_allow_html=True)
 
-# Combined Row for Board and Stats
-main_col, side_col = st.columns([2.5, 1])
+# Process board data for rendering
+display_board = [row[:] for row in st.session_state.board]
+curr_r, curr_c = st.session_state.curr_pos
+curr_data = SHAPES[st.session_state.curr_type]
+for r, row in enumerate(curr_data['shape']):
+    for c, val in enumerate(row):
+        if val and curr_r + r < 20:
+            display_board[curr_r + r][curr_c + c] = curr_data['color']
 
-with side_col:
-    st.write("**NEXT**")
-    n = SHAPES[st.session_state.next_type]
-    n_p = "".join(["".join([n['color'] if v else "⬛" for v in r]) + "\n" for r in n['shape']])
-    st.text(n_p)
-    st.write(f"**SC**\n{st.session_state.score}")
+# Build the table HTML
+table_html = "<table class='game-table'>"
+for row in display_board:
+    table_html += "<tr>" + "".join([f"<td>{cell}</td>" for cell in row]) + "</tr>"
+table_html += "</table>"
+st.markdown(table_html, unsafe_allow_html=True)
 
-with main_col:
-    display_board = [row[:] for row in st.session_state.board]
-    curr_r, curr_c = st.session_state.curr_pos
-    curr_data = SHAPES[st.session_state.curr_type]
-    for r, row in enumerate(curr_data['shape']):
-        for c, val in enumerate(row):
-            if val and curr_r + r < 20:
-                display_board[curr_r + r][curr_c + c] = curr_data['color']
+# NEXT PREVIEW (Simple)
+n = SHAPES[st.session_state.next_type]
+n_p = "".join(["".join([n['color'] if v else "⬛" for v in r]) + " " for r in n['shape']])
+st.markdown(f"<div class='stats'>NEXT: {n_p}</div>", unsafe_allow_html=True)
 
-    board_str = "".join(["".join(row) + "\n" for row in display_board])
-    st.text(board_str)
-
-# --- 5. CONTROLS (GRID ROW) ---
+# --- 5. CONTROLS ---
 ctrl_cols = st.columns(4)
 with ctrl_cols[0]:
     if st.button("⬅️", key="L"): move(0, -1); st.rerun()
@@ -141,8 +124,7 @@ with ctrl_cols[3]:
     if st.button("🔄", key="Rot"): rotate(); st.rerun()
 
 if st.button("♻️ RESET", use_container_width=True):
-    st.session_state.clear();
-    st.rerun()
+    st.session_state.clear(); st.rerun()
 
 # --- 6. GRAVITY ---
 time.sleep(1)
