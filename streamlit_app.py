@@ -41,14 +41,12 @@ def lock_and_clear():
         for c, val in enumerate(row):
             if val and curr_r + r < 20:
                 st.session_state.board[curr_r + r][curr_c + c] = shape_data['color']
-
     new_board = [row for row in st.session_state.board if "⬛" in row]
     cleared = 20 - len(new_board)
     if cleared > 0:
         st.session_state.score += (cleared * 100)
         for _ in range(cleared): new_board.insert(0, ["⬛" for _ in range(10)])
         st.session_state.board = new_board
-
     st.session_state.curr_type = st.session_state.next_type
     st.session_state.next_type = random.choice(list(SHAPES.keys()))
     st.session_state.curr_pos = [0, 3]
@@ -73,35 +71,44 @@ def rotate():
         SHAPES[st.session_state.curr_type]['shape'] = rotated
 
 
-# --- 3. CSS (THE FIX) ---
+# --- 3. THE "BRICK" CSS (FORCE NO STACKING) ---
 st.markdown("""<style>
-    .block-container { max-width: 340px !important; padding: 5px !important; }
+    /* Force main container to be skinny */
+    .block-container { max-width: 320px !important; padding: 5px !important; margin: auto !important; }
     .stApp { background-color: #2e2e2e !important; }
 
-    /* PRE is the text box for the grid */
+    /* Screen formatting */
     pre {
-        background-color: #1a1a1a !important; 
-        color: white !important;
-        padding: 4px !important; 
-        border: 2px solid #444 !important;
-        line-height: 1.0 !important; 
-        font-size: 15px !important;
-        white-space: nowrap !important; /* FORCES LINE TO STAY IN ONE PIECE */
-        overflow: hidden !important;
-        letter-spacing: -3px !important; /* PULLS EMOJIS CLOSER */
-        font-family: 'Courier New', monospace !important;
+        background-color: #1a1a1a !important; color: white !important;
+        padding: 5px !important; border: 2px solid #444 !important;
+        line-height: 1.0 !important; font-size: 13px !important;
+        white-space: nowrap !important; letter-spacing: -3px !important;
+        font-family: monospace !important; overflow: hidden !important;
     }
 
-    div[data-testid="column"] { flex: 1 1 auto !important; width: auto !important; min-width: 0 !important; }
-    div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: row !important; gap: 4px !important; }
-    div.stButton > button { height: 60px !important; font-size: 25px !important; padding: 0 !important; }
+    /* FORCE SIDE-BY-SIDE GRID FOR DASHBOARD */
+    div[data-testid="column"]:has(pre) {
+        display: flex !important; flex-direction: row !important;
+        gap: 5px !important; width: 100% !important;
+    }
+
+    /* FORCE BUTTON ROW */
+    div[data-testid="stHorizontalBlock"] {
+        display: grid !important; 
+        grid-template-columns: repeat(4, 1fr) !important; 
+        gap: 2px !important;
+    }
+
+    div[data-testid="column"] { width: 100% !important; flex: none !important; }
+
+    div.stButton > button { height: 60px !important; font-size: 22px !important; padding: 0 !important; }
 </style>""", unsafe_allow_html=True)
 
 # --- 4. DISPLAY ---
 st.title("🧱 PRO TETRIS")
 
-# Side-by-Side Dashboard
-game_col, side_col = st.columns([2.5, 1])
+# Combined Row for Board and Stats
+main_col, side_col = st.columns([2.5, 1])
 
 with side_col:
     st.write("**NEXT**")
@@ -110,7 +117,7 @@ with side_col:
     st.text(n_p)
     st.write(f"**SC**\n{st.session_state.score}")
 
-with game_col:
+with main_col:
     display_board = [row[:] for row in st.session_state.board]
     curr_r, curr_c = st.session_state.curr_pos
     curr_data = SHAPES[st.session_state.curr_type]
@@ -122,15 +129,15 @@ with game_col:
     board_str = "".join(["".join(row) + "\n" for row in display_board])
     st.text(board_str)
 
-# --- 5. CONTROLS ---
-c1, c2, c3, c4 = st.columns(4)
-with c1:
+# --- 5. CONTROLS (GRID ROW) ---
+ctrl_cols = st.columns(4)
+with ctrl_cols[0]:
     if st.button("⬅️", key="L"): move(0, -1); st.rerun()
-with c2:
+with ctrl_cols[1]:
     if st.button("⬇️", key="D"): move(1, 0); st.rerun()
-with c3:
+with ctrl_cols[2]:
     if st.button("➡️", key="R"): move(0, 1); st.rerun()
-with c4:
+with ctrl_cols[3]:
     if st.button("🔄", key="Rot"): rotate(); st.rerun()
 
 if st.button("♻️ RESET", use_container_width=True):
