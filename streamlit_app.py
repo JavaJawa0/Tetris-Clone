@@ -12,7 +12,7 @@ if 'board' not in st.session_state:
     st.session_state.curr_shape = [[1, 1], [1, 1]]
 
 
-# --- 2. LOGIC ---
+# --- 2. GAME LOGIC ---
 def check_collision(r, c, shape):
     for ri, row in enumerate(shape):
         for ci, val in enumerate(row):
@@ -58,45 +58,55 @@ def rotate():
         st.session_state.curr_shape = rotated
 
 
-# --- 3. THE "STRICT" LAYOUT CSS ---
+# --- 3. ZERO-MARGIN CSS ---
 st.markdown("""<style>
-    /* Force everything to stay narrow and centered */
+    /* Kill all outer margins and paddings */
     .block-container {
-        max-width: 320px !important;
-        padding: 5px !important;
+        max-width: 310px !important;
+        padding: 0px !important;
         margin: auto !important;
     }
     .stApp { background-color: #2e2e2e !important; }
+
+    /* Center the score and game board */
+    div.element-container, div.stMarkdown {
+        display: flex;
+        justify-content: center;
+    }
 
     /* Screen Styling */
     [data-testid="stText"] {
         background-color: #8A9878; color: #101010;
         font-family: monospace; padding: 5px; border: 4px solid #000;
         line-height: 1.0; font-size: 14px; font-weight: bold;
-        margin-bottom: 5px; text-align: center;
+        margin: 0px auto 5px auto !important;
         width: 100% !important;
+        box-sizing: border-box;
     }
 
-    /* Row Layout */
+    /* Tighten the Button Containers */
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        gap: 4px !important;
-        width: 100% !important;
+        gap: 2px !important; /* Minimal gap between buttons */
+        padding: 0px !important;
+        margin: 0px !important;
     }
 
     div[data-testid="column"] {
         flex: 1 !important;
         min-width: 0 !important;
+        padding: 0px !important;
     }
 
-    /* Buttons */
+    /* Big Controller Buttons */
     div.stButton > button {
         background-color: #3B3B3B !important; color: white !important;
-        height: 60px !important; font-size: 24px !important; 
-        border-radius: 8px !important; width: 100% !important;
-        padding: 0 !important; border: 2px solid #111 !important;
+        height: 65px !important; font-size: 28px !important; 
+        border-radius: 5px !important; width: 100% !important;
+        padding: 0px !important; border: 1px solid #111 !important;
+        margin: 0px !important;
     }
 </style>""", unsafe_allow_html=True)
 
@@ -113,7 +123,7 @@ board_str = "".join(["".join(["🟥" if cell else "⬛" for cell in row]) + "\n"
 st.text(board_str)
 
 # --- 5. CONTROLS ---
-# Row 1: Arrows
+# First Row: Movement
 c1, c2, c3 = st.columns(3)
 with c1:
     if st.button("⬅️", key="L"): move(0, -1); st.rerun()
@@ -122,7 +132,7 @@ with c2:
 with c3:
     if st.button("➡️", key="R"): move(0, 1); st.rerun()
 
-# Row 2: Rotate and Reset
+# Second Row: Actions
 cr1, cr2 = st.columns([2, 1])
 with cr1:
     if st.button("🔄 ROTATE", key="Rot"): rotate(); st.rerun()
