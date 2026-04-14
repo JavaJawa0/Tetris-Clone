@@ -41,14 +41,12 @@ def lock_and_clear():
         for c, val in enumerate(row):
             if val and curr_r + r < 20:
                 st.session_state.board[curr_r + r][curr_c + c] = shape_data['color']
-
     new_board = [row for row in st.session_state.board if "⬛" in row]
     cleared = 20 - len(new_board)
     if cleared > 0:
         st.session_state.score += (cleared * 100)
         for _ in range(cleared): new_board.insert(0, ["⬛" for _ in range(10)])
         st.session_state.board = new_board
-
     st.session_state.curr_type = st.session_state.next_type
     st.session_state.next_type = random.choice(list(SHAPES.keys()))
     st.session_state.curr_pos = [0, 3]
@@ -73,46 +71,42 @@ def rotate():
         SHAPES[st.session_state.curr_type]['shape'] = rotated
 
 
-# --- 3. THE "DASHBOARD" CSS ---
+# --- 3. THE "STRICT" LAYOUT CSS ---
 st.markdown("""<style>
-    .block-container { max-width: 320px !important; padding: 5px !important; }
+    .block-container { max-width: 330px !important; padding: 5px !important; }
     .stApp { background-color: #2e2e2e !important; }
 
-    /* Force Side-by-Side Dashboard */
-    [data-testid="column"] {
-        flex: 1 1 auto !important;
-        width: auto !important;
-        min-width: 0 !important;
-    }
-
-    /* Screen formatting */
+    /* PRE prevents the emojis from breaking to new lines */
     pre {
         background-color: #1a1a1a !important; color: white !important;
-        padding: 4px !important; border: 2px solid #444 !important;
-        line-height: 1.0 !important; font-size: 12px !important;
-        margin: 0 !important;
+        padding: 5px !important; border: 2px solid #444 !important;
+        line-height: 1.0 !important; font-size: 13px !important;
+        white-space: pre !important;  /* CRITICAL: No wrapping */
+        letter-spacing: -2px !important; /* Tighten piece gap */
+        width: fit-content !important;
     }
 
-    /* Grid for Controller */
+    /* Controller Row Fix */
     div[data-testid="stHorizontalBlock"] {
         display: flex !important; flex-direction: row !important;
-        flex-wrap: nowrap !important; gap: 4px !important;
+        flex-wrap: nowrap !important; gap: 3px !important;
     }
-    div.stButton > button { height: 65px !important; font-size: 25px !important; }
+    div.stButton > button { height: 60px !important; font-size: 24px !important; padding: 0 !important; }
 </style>""", unsafe_allow_html=True)
 
-# --- 4. DISPLAY LAYOUT ---
+# --- 4. DISPLAY ---
 st.title("🧱 PRO TETRIS")
 
-# Dashboard Row
-game_col, side_col = st.columns([2, 1])
+# Side-by-Side Dashboard
+game_col, side_col = st.columns([2.2, 1])
 
 with side_col:
-    st.write("**NEXT**")
-    n_shape = SHAPES[st.session_state.next_type]
-    n_preview = "".join(["".join([n_shape['color'] if v else "⬛" for v in row]) + "\n" for row in n_shape['shape']])
-    st.text(n_preview)
-    st.write(f"**SC:**\n{st.session_state.score}")
+    st.write("#### NEXT")
+    n = SHAPES[st.session_state.next_type]
+    n_p = "".join(["".join([n['color'] if v else "⬛" for v in r]) + "\n" for r in n['shape']])
+    st.text(n_p)
+    st.divider()
+    st.metric("SC", st.session_state.score)
 
 with game_col:
     display_board = [row[:] for row in st.session_state.board]
@@ -138,7 +132,7 @@ with c4:
     if st.button("🔄", key="Rot"): rotate(); st.rerun()
 
 if st.button("♻️ RESET", use_container_width=True):
-    st.session_state.clear()
+    st.session_state.clear();
     st.rerun()
 
 # --- 6. GRAVITY ---
