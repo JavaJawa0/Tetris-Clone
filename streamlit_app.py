@@ -3,7 +3,7 @@ import random
 import time
 
 # --- 1. INITIALIZE ---
-st.set_page_config(page_title="Tetris-Clone", layout="centered")
+st.set_page_config(page_title="Turbo Tetris", layout="centered")
 
 if 'SHAPE_DEFS' not in st.session_state:
     st.session_state.SHAPE_DEFS = {
@@ -24,8 +24,13 @@ if 'board' not in st.session_state:
     st.session_state.curr_pos = [0, 3]
     st.session_state.live_matrix = st.session_state.SHAPE_DEFS[st.session_state.curr_type]['matrix']
 
+# --- 2. SPEED LOGIC ---
+# Calculates speed based on score. Faster as you play!
+# Starts at 0.5s, floors at 0.1s for extreme mode.
+current_speed = max(0.1, 0.5 - (st.session_state.score / 5000))
 
-# --- 2. LOGIC ---
+
+# --- 3. CORE LOGIC ---
 def check_collision(r, c, matrix):
     for ri, row in enumerate(matrix):
         for ci, val in enumerate(row):
@@ -63,13 +68,11 @@ def lock_and_clear():
 
 def move(dr, dc, is_hard_drop=False):
     if is_hard_drop:
-        # Slam it to the bottom
         while not check_collision(st.session_state.curr_pos[0] + 1, st.session_state.curr_pos[1],
                                   st.session_state.live_matrix):
             st.session_state.curr_pos[0] += 1
         lock_and_clear()
     else:
-        # Normal single step (Gravity)
         nr, nc = st.session_state.curr_pos[0] + dr, st.session_state.curr_pos[1] + dc
         if not check_collision(nr, nc, st.session_state.live_matrix):
             st.session_state.curr_pos = [nr, nc]
@@ -87,19 +90,19 @@ def rotate_logic():
             return
 
 
-# --- 3. CSS ---
-st.markdown("""<style>
-    .block-container { max-width: 320px !important; padding: 0 !important; margin: auto !important; }
-    .stApp { background-color: #2e2e2e !important; }
-    .game-table { border-collapse: collapse; margin: 0 auto; background-color: #1a1a1a; border: 4px solid #444; }
-    .game-table td { padding: 0 !important; font-size: 20px !important; width: 22px; height: 22px; text-align: center; line-height: 0; }
-    .dashboard { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 10px 5px; color: white; font-family: monospace; }
-    .next-box { background: #1a1a1a; border: 2px solid #444; padding: 5px; min-width: 80px; }
-    div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 2px !important; }
-    div.stButton > button { height: 60px !important; font-size: 25px !important; background-color: #3b3b3b !important; color: white !important; padding: 0 !important; }
+# --- 4. UI & CSS ---
+st.markdown(f"""<style>
+    .block-container {{ max-width: 320px !important; padding: 0 !important; margin: auto !important; }}
+    .stApp {{ background-color: #2e2e2e !important; }}
+    .game-table {{ border-collapse: collapse; margin: 0 auto; background-color: #1a1a1a; border: 4px solid #444; }}
+    .game-table td {{ padding: 0 !important; font-size: 20px !important; width: 22px; height: 22px; text-align: center; line-height: 0; }}
+    .dashboard {{ display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 10px 5px; color: white; font-family: monospace; }}
+    .next-box {{ background: #1a1a1a; border: 2px solid #444; padding: 5px; min-width: 80px; }}
+    div[data-testid="stHorizontalBlock"] {{ display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 2px !important; }}
+    div.stButton > button {{ height: 60px !important; font-size: 25px !important; background-color: #3b3b3b !important; color: white !important; padding: 0 !important; }}
 </style>""", unsafe_allow_html=True)
 
-# --- 4. RENDER DASHBOARD ---
+# Dashboard
 n_def = st.session_state.SHAPE_DEFS[st.session_state.next_type]
 next_grid = [["⬛" for _ in range(4)] for _ in range(2)]
 for r, row in enumerate(n_def['matrix']):
@@ -108,24 +111,24 @@ for r, row in enumerate(n_def['matrix']):
 next_html = "".join(["".join(r) + "<br>" for r in next_grid])
 
 st.markdown(f"""<div class="dashboard"><div class="next-box"><small>NEXT:</small><br>{next_html}</div>
-<div style="text-align: right;"><small>SCORE:</small><br><span style="font-size: 20px;">{st.session_state.score}</span></div></div>""",
+<div style="text-align: right;"><small>SCORE:</small><br><span style="font-size: 20px;">{st.session_state.score}</span><br><small>SPD: {int(current_speed * 1000)}ms</small></div></div>""",
             unsafe_allow_html=True)
 
-# --- 5. RENDER BOARD ---
+# Game Board Rendering
 display_board = [row[:] for row in st.session_state.board]
 curr_r, curr_c = st.session_state.curr_pos
-color = st.session_state.SHAPE_DEFS[st.session_state.curr_type]['color']
+curr_color = st.session_state.SHAPE_DEFS[st.session_state.curr_type]['color']
 for r, row in enumerate(st.session_state.live_matrix):
     for c, val in enumerate(row):
         if val:
             dr, dc = curr_r + r, curr_c + c
-            if 0 <= dr < 20: display_board[dr][dc] = color
+            if 0 <= dr < 20: display_board[dr][dc] = curr_color
 
 board_html = "<table class='game-table'>" + "".join(
     ["<tr>" + "".join([f"<td>{cell}</td>" for cell in row]) + "</tr>" for row in display_board]) + "</table>"
 st.markdown(board_html, unsafe_allow_html=True)
 
-# --- 6. CONTROLS ---
+# --- 5. CONTROLS ---
 st.write("")
 ctrl = st.columns(4)
 if ctrl[0].button("⬅️", key="L"): move(0, -1); st.rerun()
@@ -135,7 +138,7 @@ if ctrl[3].button("🔄", key="Rot"): rotate_logic(); st.rerun()
 
 if st.button("♻️ RESET GAME", use_container_width=True): st.session_state.clear(); st.rerun()
 
-# --- 7. AUTO-GRAVITY (Timer) ---
-time.sleep(1)
-move(1, 0, is_hard_drop=False)  # Gravity is always slow
+# --- 6. TURBO GRAVITY ---
+time.sleep(current_speed)
+move(1, 0, is_hard_drop=False)
 st.rerun()
