@@ -5,7 +5,6 @@ import time
 # --- 1. INITIALIZE ---
 st.set_page_config(page_title="Pro Tetris", layout="centered")
 
-# Basic shape definitions (only used for spawning)
 if 'SHAPE_DEFS' not in st.session_state:
     st.session_state.SHAPE_DEFS = {
         'I': {'matrix': [[1, 1, 1, 1]], 'color': '🟦'},
@@ -23,7 +22,6 @@ if 'board' not in st.session_state:
     st.session_state.curr_type = random.choice(list(st.session_state.SHAPE_DEFS.keys()))
     st.session_state.next_type = random.choice(list(st.session_state.SHAPE_DEFS.keys()))
     st.session_state.curr_pos = [0, 3]
-    # This is the "Live" matrix that actually rotates
     st.session_state.live_matrix = st.session_state.SHAPE_DEFS[st.session_state.curr_type]['matrix']
 
 
@@ -43,8 +41,11 @@ def lock_and_clear():
     color = st.session_state.SHAPE_DEFS[st.session_state.curr_type]['color']
     for r, row in enumerate(st.session_state.live_matrix):
         for c, val in enumerate(row):
-            if val and curr_r + r < 20:
-                st.session_state.board[curr_r + r][curr_c + c] = color
+            if val:
+                target_r = curr_r + r
+                target_c = curr_c + c
+                if 0 <= target_r < 20:
+                    st.session_state.board[target_r][target_c] = color
 
     new_board = [row for row in st.session_state.board if "⬛" in row]
     cleared = 20 - len(new_board)
@@ -53,7 +54,6 @@ def lock_and_clear():
         for _ in range(cleared): new_board.insert(0, ["⬛" for _ in range(10)])
         st.session_state.board = new_board
 
-    # Spawn next
     st.session_state.curr_type = st.session_state.next_type
     st.session_state.next_type = random.choice(list(st.session_state.SHAPE_DEFS.keys()))
     st.session_state.live_matrix = st.session_state.SHAPE_DEFS[st.session_state.curr_type]['matrix']
@@ -73,11 +73,8 @@ def move(dr, dc):
 
 
 def rotate_logic():
-    # 90-degree clockwise rotation
     rotated = [list(row) for row in zip(*st.session_state.live_matrix[::-1])]
     r, c = st.session_state.curr_pos
-
-    # Try multiple "kicks" to make it fit
     for kick in [0, -1, 1, -2, 2]:
         if not check_collision(r, c + kick, rotated):
             st.session_state.live_matrix = rotated
@@ -85,19 +82,19 @@ def rotate_logic():
             return
 
 
-# --- 3. CSS ---
+# --- 3. CSS (BRICK-GAME OPTIMIZED) ---
 st.markdown("""<style>
     .block-container { max-width: 320px !important; padding: 0 !important; margin: auto !important; }
     .stApp { background-color: #2e2e2e !important; }
     .game-table { border-collapse: collapse; margin: 0 auto; background-color: #1a1a1a; border: 4px solid #444; }
-    .game-table td { padding: 0 !important; font-size: 20px !important; width: 22px; height: 22px; text-align: center; }
+    .game-table td { padding: 0 !important; font-size: 20px !important; width: 22px; height: 22px; text-align: center; line-height: 0; }
     .dashboard { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 10px 5px; color: white; font-family: monospace; }
     .next-box { background: #1a1a1a; border: 2px solid #444; padding: 5px; min-width: 80px; }
     div[data-testid="stHorizontalBlock"] { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 2px !important; }
     div.stButton > button { height: 65px !important; font-size: 24px !important; background-color: #3b3b3b !important; color: white !important; }
 </style>""", unsafe_allow_html=True)
 
-# --- 4. DASHBOARD ---
+# --- 4. RENDER DASHBOARD ---
 n_def = st.session_state.SHAPE_DEFS[st.session_state.next_type]
 next_grid = [["⬛" for _ in range(4)] for _ in range(2)]
 for r, row in enumerate(n_def['matrix']):
@@ -116,8 +113,11 @@ curr_color = st.session_state.SHAPE_DEFS[st.session_state.curr_type]['color']
 
 for r, row in enumerate(st.session_state.live_matrix):
     for c, val in enumerate(row):
-        if val and curr_r + r < 20:
-            display_board[curr_r + r][curr_c + c] = curr_color
+        if val:
+            draw_r = curr_r + r
+            draw_c = curr_c + c
+            if 0 <= draw_r < 20 and 0 <= draw_c < 10:
+                display_board[draw_r][draw_c] = curr_color
 
 board_html = "<table class='game-table'>" + "".join(
     ["<tr>" + "".join([f"<td>{cell}</td>" for cell in row]) + "</tr>" for row in display_board]) + "</table>"
