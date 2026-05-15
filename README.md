@@ -8,7 +8,7 @@ A mobile-responsive Tetris clone built with **Python**, **Streamlit**, and a das
 - **Live Deployment:** Ready to be hosted on Streamlit Community Cloud.
 
 ## 🕹️ Live Demo
-[PASTE YOUR STREAMLIT LINK HERE]
+https://javajawa0-tetris-clone.streamlit.app/
 
 ## 🛠️ Setup
 1. Install requirements: `pip install -r requirements.txt`
