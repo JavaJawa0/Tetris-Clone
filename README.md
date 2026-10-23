@@ -10,6 +10,6 @@ Features
 Live Demo
 https://javajawa0-tetris-clone.streamlit.app/
 
-🛠️ Setup
+Setup
 1. Install requirements: `pip install -r requirements.txt`
 2. Run app: `streamlit run streamlit_app.py`
